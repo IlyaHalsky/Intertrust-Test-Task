@@ -1,14 +1,14 @@
 package com.intertrust.parsers
 
 import java.time.Instant
-
 import com.intertrust.protocol.Movement.{Enter, Exit}
 import com.intertrust.protocol._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.io.Source
 
-class MovementEventParserSpec extends WordSpec with Matchers {
+class MovementEventParserSpec extends AnyWordSpec with Matchers {
   "Movement event parser" should {
     "successfully parse movement events" when {
       "single entry to vessel" in {

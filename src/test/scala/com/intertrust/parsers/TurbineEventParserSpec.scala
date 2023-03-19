@@ -1,14 +1,14 @@
 package com.intertrust.parsers
 
 import java.time.Instant
-
 import com.intertrust.protocol.TurbineStatus.{Broken, Working}
 import com.intertrust.protocol._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.io.Source
 
-class TurbineEventParserSpec extends WordSpec with Matchers {
+class TurbineEventParserSpec extends AnyWordSpec with Matchers {
   "Turbine event parser" should {
     "successfully parse turbine events" when {
       "single working event" in {

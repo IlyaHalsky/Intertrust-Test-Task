@@ -1,13 +1,11 @@
 package com.intertrust
 
-import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import com.intertrust.behaviours.{Alerts, SnapshotsTest}
-import com.intertrust.behaviours.Alerts.{Alert, TurbineAlert}
-import com.intertrust.behaviours.SnapshotsTest.Hi
+import akka.actor.typed.{ActorSystem, Behavior}
+import com.intertrust.behaviours.Alerts
 import com.intertrust.parsers.{MovementEventParser, TurbineEventParser}
+import com.intertrust.protocol.Alert
 
-import java.time.Instant
 import scala.io.Source
 
 object Simulator {
@@ -15,11 +13,6 @@ object Simulator {
   def apply(): Behavior[Alert] =
     Behaviors.setup { context =>
       val alerts = context.spawn(Alerts("alerts"), "alerts")
-      val hi = context.spawn(SnapshotsTest("test"), "test")
-      alerts ! TurbineAlert(Instant.now(), "123", "test")
-      hi ! Hi("test")
-      for {i <- 1 to 51} hi ! Hi(s"$i")
-      Thread.sleep(1000)
       Behaviors.stopped
     }
 

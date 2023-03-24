@@ -1,10 +1,10 @@
 package com.intertrust.parsers
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
-
 import com.intertrust.parsers.TurbineEventParser.timestampFormat
 import com.intertrust.protocol.{TurbineEvent, TurbineStatus}
+
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 
 class TurbineEventParser extends EventParser[TurbineEvent] {
   override protected def parseEvent(columns: Array[String]): TurbineEvent = {

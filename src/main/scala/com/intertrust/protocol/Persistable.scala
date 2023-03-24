@@ -1,4 +1,4 @@
-package com.intertrust
+package com.intertrust.protocol
 
 sealed trait Persistable
 

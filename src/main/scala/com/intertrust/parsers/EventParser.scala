@@ -7,10 +7,10 @@ abstract class EventParser[T] {
   protected def parseEvent(columns: Array[String]): T
 
   def parseEvents(source: Source): Iterator[T] = {
-      source
-        .getLines()
-        .drop(1) // Drop header
-        .map(asEvent)
+    source
+      .getLines()
+      .drop(1) // Drop header
+      .map(asEvent)
   }
 
   private def asEvent(line: String) = {

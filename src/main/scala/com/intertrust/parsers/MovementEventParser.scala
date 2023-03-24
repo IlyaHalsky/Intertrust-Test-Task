@@ -1,10 +1,10 @@
 package com.intertrust.parsers
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
-
 import com.intertrust.parsers.MovementEventParser.{timestampFormat, vesselPattern}
 import com.intertrust.protocol._
+
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 
 class MovementEventParser extends EventParser[MovementEvent] {
   override protected def parseEvent(columns: Array[String]): MovementEvent = {

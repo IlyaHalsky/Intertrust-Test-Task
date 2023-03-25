@@ -15,7 +15,7 @@ object TurbineStatus extends Enum[TurbineStatus] {
 
 }
 
-trait Location {
+trait Location extends Persistable {
   def id: String
 }
 

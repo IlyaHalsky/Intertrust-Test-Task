@@ -1,6 +1,6 @@
 package com.intertrust.protocol
 
-sealed trait Persistable
+trait Persistable
 
 trait PersistableEvent extends Persistable
 

@@ -1,14 +1,14 @@
 package com.intertrust.behaviours
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.ActorContext
+import akka.actor.typed.{ActorRef, Behavior}
 import akka.persistence.typed.scaladsl.Effect
 import com.intertrust.protocol._
 import com.intertrust.utils.StatefulPersistentBehaviour
 
 object Person {
   def apply(actorName: String, manager: ActorRef[PersonnelCommand]): Behavior[MovementEvent] =
-    StatefulPersistentBehaviour(Person(manager, actorName, _))
+    StatefulPersistentBehaviour(Person(actorName, manager, _))
 }
 
 case class PersonLocationChange(newLocation: Option[Location]) extends PersistableEvent
@@ -29,8 +29,9 @@ case class PersonState(lastLocation: Option[Location]) extends PersistableState 
 }
 
 case class Person(
+  actorName: String,
   manager: ActorRef[PersonnelCommand],
-  actorName: String, context: ActorContext[MovementEvent]
+  context: ActorContext[MovementEvent],
 ) extends StatefulPersistentBehaviour[MovementEvent, PersonLocationChange, PersonState] {
   def startingState: PersonState = PersonState(None)
 

@@ -8,10 +8,9 @@ import com.intertrust.protocol.{PersistableEvent, PersistableState}
 
 trait StatefulPersistentBehaviour[Command, Event <: PersistableEvent, State <: PersistableState]
   extends PersistentBehaviour[Command, Event, State] {
-  def numberOfEvents: Int = 100
+  def numberOfEvents: Int = 50
   def keepNSnapshots: Int = 3
   final def retentionCriteria: Option[RetentionCriteria] = Some(RetentionCriteria.snapshotEvery(numberOfEvents, keepNSnapshots))
-  def onSnapshotRecover(state: NotUsed): Unit = ()
 }
 
 object StatefulPersistentBehaviour {

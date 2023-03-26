@@ -16,8 +16,8 @@ case class Alerts(actorName: String, context: ActorContext[Alert])
   def commandHandler(command: Alert): StatelessEffect =
     Effect.persist(command).thenRun { _ =>
       command match {
-        case turbine: TurbineAlert => context.log.error(turbine.error)
-        case movement: MovementAlert => context.log.error(movement.error)
+        case turbine: TurbineAlert => context.log.error("{}:{} {}", turbine.timestamp, turbine.turbineId, turbine.error)
+        case movement: MovementAlert => context.log.error("{}:{} {}", movement.timestamp, movement.engineerId, movement.error)
       }
     }
 }

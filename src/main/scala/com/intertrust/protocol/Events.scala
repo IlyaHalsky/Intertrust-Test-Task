@@ -1,8 +1,9 @@
 package com.intertrust.protocol
 
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type
-import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id
+import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
+import com.fasterxml.jackson.databind.annotation.{JsonDeserialize, JsonSerialize}
 import enumeratum.{Enum, EnumEntry}
 
 import java.time.Instant
@@ -35,6 +36,8 @@ case class Vessel(id: String) extends Location
 
 case class Turbine(id: String) extends Location
 
+@JsonSerialize(using = classOf[MovementSerializer])
+@JsonDeserialize(using = classOf[MovementDeserializer])
 sealed trait Movement extends EnumEntry
 
 object Movement extends Enum[Movement] {
@@ -46,6 +49,15 @@ object Movement extends Enum[Movement] {
 
 }
 
+@JsonTypeInfo(use = Id.NAME,
+  include = JsonTypeInfo.As.PROPERTY,
+  property = "type"
+)
+@JsonSubTypes(Array(
+  new Type(value = classOf[TurbineEvent]),
+  new Type(value = classOf[MovementEvent])
+)
+)
 trait WithTimestamp extends Persistable {
   def timestamp: Instant
 }

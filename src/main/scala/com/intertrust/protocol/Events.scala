@@ -9,8 +9,8 @@ import enumeratum.{Enum, EnumEntry}
 import java.time.Instant
 
 
-@JsonSerialize(using = classOf[TurbineStatusAdapter])
-@JsonDeserialize(using = classOf[TurbineStatusAdapter])
+@JsonSerialize(using = classOf[TurbineStatusSerializer])
+@JsonDeserialize(using = classOf[TurbineStatusDeserializer])
 sealed trait TurbineStatus extends EnumEntry
 
 object TurbineStatus extends Enum[TurbineStatus] {
@@ -39,8 +39,8 @@ case class Vessel(id: String) extends Location
 
 case class Turbine(id: String) extends Location
 
-@JsonSerialize(using = classOf[MovementAdapter])
-@JsonDeserialize(using = classOf[MovementAdapter])
+@JsonSerialize(using = classOf[MovementSerializer])
+@JsonDeserialize(using = classOf[MovementDeserializer])
 sealed trait Movement extends EnumEntry
 
 object Movement extends Enum[Movement] {

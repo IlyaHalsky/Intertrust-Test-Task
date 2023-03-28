@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
 import com.fasterxml.jackson.databind._
 import enumeratum.EnumEntry
 
-trait JSerializer[Entry <: EnumEntry] extends JsonSerializer[Entry]{
+trait JSerializer[Entry <: EnumEntry] extends JsonSerializer[Entry] {
   def serialize(value: Entry, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
     gen.writeStringField("type", value.entryName)
@@ -12,7 +12,7 @@ trait JSerializer[Entry <: EnumEntry] extends JsonSerializer[Entry]{
   }
 }
 
-trait JDeserializer[Entry <: EnumEntry] extends JsonDeserializer[Entry]{
+trait JDeserializer[Entry <: EnumEntry] extends JsonDeserializer[Entry] {
   def enumeration: enumeratum.Enum[Entry]
 
   def deserialize(p: JsonParser, ctxt: DeserializationContext): Entry = {
@@ -21,10 +21,14 @@ trait JDeserializer[Entry <: EnumEntry] extends JsonDeserializer[Entry]{
   }
 }
 
-class MovementAdapter extends JSerializer[Movement] with JDeserializer[Movement] {
+class MovementSerializer extends JSerializer[Movement] {}
+
+class MovementDeserializer extends JDeserializer[Movement] {
   def enumeration: enumeratum.Enum[Movement] = Movement
 }
 
-class TurbineStatusAdapter extends JSerializer[TurbineStatus] with JDeserializer[TurbineStatus] {
+class TurbineStatusSerializer extends JSerializer[TurbineStatus] {}
+
+class TurbineStatusDeserializer extends JDeserializer[TurbineStatus] {
   def enumeration: enumeratum.Enum[TurbineStatus] = TurbineStatus
 }

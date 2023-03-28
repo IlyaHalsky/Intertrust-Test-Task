@@ -1,3 +1,6 @@
+# Notes
+Please read notes provided in **[here](NOTES.md)**
+
 # Intertrust Backend Engineer Test Task
 
 The goal of the test task is to create a reactive system, using Scala and Akka, optionally also kafka and Akka 

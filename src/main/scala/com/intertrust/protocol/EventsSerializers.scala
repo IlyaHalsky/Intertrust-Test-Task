@@ -1,18 +1,30 @@
 package com.intertrust.protocol
 
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
-import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonNode, JsonSerializer, SerializerProvider}
+import com.fasterxml.jackson.databind._
+import enumeratum.EnumEntry
 
-class MovementSerializer extends JsonSerializer[Movement] {
-  def serialize(value: Movement, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
+trait JSerializer[Entry <: EnumEntry] extends JsonSerializer[Entry]{
+  def serialize(value: Entry, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
     gen.writeStringField("type", value.entryName)
     gen.writeEndObject()
   }
 }
-class MovementDeserializer  extends JsonDeserializer[Movement]{
-  def deserialize(p: JsonParser, ctxt: DeserializationContext): Movement = {
+
+trait JDeserializer[Entry <: EnumEntry] extends JsonDeserializer[Entry]{
+  def enumeration: enumeratum.Enum[Entry]
+
+  def deserialize(p: JsonParser, ctxt: DeserializationContext): Entry = {
     val node: JsonNode = p.getCodec.readTree(p)
-    Movement.withName(node.get("type").asText())
+    enumeration.withName(node.get("type").asText())
   }
+}
+
+class MovementAdapter extends JSerializer[Movement] with JDeserializer[Movement] {
+  def enumeration: enumeratum.Enum[Movement] = Movement
+}
+
+class TurbineStatusAdapter extends JSerializer[TurbineStatus] with JDeserializer[TurbineStatus] {
+  def enumeration: enumeratum.Enum[TurbineStatus] = TurbineStatus
 }

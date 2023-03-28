@@ -9,4 +9,4 @@ object TimeEndTypes {
 }
 
 
-case class TimeTick(time: Instant)
+case class TimeTick(time: Instant) extends WindFarmCommand

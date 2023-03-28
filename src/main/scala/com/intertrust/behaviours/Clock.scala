@@ -6,7 +6,7 @@ import com.intertrust.protocol.TimeEndTypes.TimeEnd
 import com.intertrust.protocol.{TimeEnd, TimeTick}
 
 import java.time.Instant
-import scala.concurrent.duration.{Duration, FiniteDuration, MILLISECONDS}
+import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 object Clock {
   sealed trait ClockMessages

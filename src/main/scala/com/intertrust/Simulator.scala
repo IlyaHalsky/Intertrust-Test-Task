@@ -2,7 +2,7 @@ package com.intertrust
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
-import com.intertrust.behaviours.{Alerts, Clock, Personnel}
+import com.intertrust.behaviours.{Alerts, Clock, Personnel, WindFarm}
 import com.intertrust.parsers.{MovementEventParser, TurbineEventParser}
 import com.intertrust.protocol.TimeEndTypes.TimeEnd
 import com.intertrust.utils.PseudoKafkaConsumer
@@ -25,9 +25,9 @@ object Simulator {
   val startTime: String = "22.11.2015 23:59:59"
   val stopTime: String = "29.11.2015 23:59:59"
   // Simulator changes time every n milliseconds
-  val tickEveryMillisecond: Int = 100
-  // Simulator changes time for m seconds
-  val tickForSeconds: Int = 30
+  val tickEveryMillisecond: Int = 10
+  // Simulator changes time for m seconds, based on logs set it to an odd number below 60 seconds
+  val tickForSeconds: Int = 29
 
 
   private lazy val timestampFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").withZone(ZoneId.of("UTC"))
@@ -36,13 +36,20 @@ object Simulator {
 
   def create(): Behavior[TimeEnd] =
     Behaviors.setup { context =>
+      context.setLoggerName("simulator")
+      context.log.info("Starting simulation, estimated run time from {} to {}", Instant.now(), Instant.now().plusMillis((stopTimeInstant.toEpochMilli - startTimeInstant.toEpochMilli) / (tickForSeconds * 1000) * tickEveryMillisecond))
       val alerts = context.spawn(Alerts("alerts"), "alerts")
+
       val personnel = context.spawn(Personnel("personnel", alerts), "personnel")
+      val windFarm = context.spawn(WindFarm("wind-farm", alerts), "wind-farm")
+
       val movementEvents = new MovementEventParser().parseEvents(Source.fromResource("movements.csv"))
-      val movementConsumer = context.spawn(PseudoKafkaConsumer("movementConsumer", movementEvents, personnel), "movementConsumer")
-      val clock = context.spawn(Clock(startTimeInstant, stopTimeInstant, tickEveryMillisecond, tickForSeconds * 1000, movementConsumer :: Nil, context.self), "clock")
+      val movementConsumer = context.spawn(PseudoKafkaConsumer("movement-consumer", movementEvents, personnel, windFarm), "movement-consumer")
 
       val turbineEvents = new TurbineEventParser().parseEvents(Source.fromResource("turbines.csv"))
+      val turbineConsumer = context.spawn(PseudoKafkaConsumer("turbine-consumer", turbineEvents, windFarm), "turbine-consumer")
+
+      val clock = context.spawn(Clock(startTimeInstant, stopTimeInstant, tickEveryMillisecond, tickForSeconds * 1000, movementConsumer :: turbineConsumer :: windFarm :: Nil, context.self), "clock")
       Behaviors.receiveMessage { timeEnd =>
         context.log.info("Clock ended simulation, shutting down")
         Behaviors.stopped

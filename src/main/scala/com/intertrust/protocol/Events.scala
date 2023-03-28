@@ -8,6 +8,9 @@ import enumeratum.{Enum, EnumEntry}
 
 import java.time.Instant
 
+
+@JsonSerialize(using = classOf[TurbineStatusAdapter])
+@JsonDeserialize(using = classOf[TurbineStatusAdapter])
 sealed trait TurbineStatus extends EnumEntry
 
 object TurbineStatus extends Enum[TurbineStatus] {
@@ -36,8 +39,8 @@ case class Vessel(id: String) extends Location
 
 case class Turbine(id: String) extends Location
 
-@JsonSerialize(using = classOf[MovementSerializer])
-@JsonDeserialize(using = classOf[MovementDeserializer])
+@JsonSerialize(using = classOf[MovementAdapter])
+@JsonDeserialize(using = classOf[MovementAdapter])
 sealed trait Movement extends EnumEntry
 
 object Movement extends Enum[Movement] {
@@ -58,10 +61,10 @@ object Movement extends Enum[Movement] {
   new Type(value = classOf[MovementEvent])
 )
 )
-trait WithTimestamp extends Persistable {
+trait Event extends Persistable {
   def timestamp: Instant
 }
 
-case class TurbineEvent(turbineId: String, status: TurbineStatus, generation: Double, timestamp: Instant) extends PersistableEvent with WithTimestamp
+case class TurbineEvent(turbineId: String, status: TurbineStatus, generation: Double, timestamp: Instant) extends PersistableEvent with Event with WindFarmCommand
 
-case class MovementEvent(engineerId: String, location: Location, movement: Movement, timestamp: Instant) extends PersonnelCommand with WithTimestamp
+case class MovementEvent(engineerId: String, location: Location, movement: Movement, timestamp: Instant) extends PersonnelCommand with Event with WindFarmCommand

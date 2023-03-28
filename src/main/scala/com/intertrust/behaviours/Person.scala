@@ -6,6 +6,8 @@ import akka.persistence.typed.scaladsl.Effect
 import com.intertrust.protocol._
 import com.intertrust.utils.StatefulPersistentBehaviour
 
+import java.time.Instant
+
 object Person {
   def apply(actorName: String, manager: ActorRef[PersonnelCommand]): Behavior[MovementEvent] =
     StatefulPersistentBehaviour(Person(actorName, manager, _))
@@ -35,8 +37,8 @@ case class Person(
 ) extends StatefulPersistentBehaviour[MovementEvent, PersonLocationChange, PersonState] {
   def startingState: PersonState = PersonState(None)
 
-  private def reportError(message: Option[String]): Unit =
-    message.foreach(manager ! PersonError(actorName, _))
+  private def reportError(movementTime: Instant, message: Option[String]): Unit =
+    message.foreach(manager ! MovementAlert(movementTime, actorName, _))
 
   private def commandToEvent(event: MovementEvent): PersonLocationChange =
     event.movement match {
@@ -45,7 +47,7 @@ case class Person(
     }
 
   def commandHandler(state: PersonState, command: MovementEvent): Effect[PersonLocationChange, PersonState] =
-    Effect.persist(commandToEvent(command)).thenRun(_ => reportError(state.checkLocationChange(command.location, command.movement)))
+    Effect.persist(commandToEvent(command)).thenRun(_ => reportError(command.timestamp, state.checkLocationChange(command.location, command.movement)))
 
   def eventHandler(state: PersonState, event: PersonLocationChange): PersonState =
     state.changeLocation(event.newLocation)

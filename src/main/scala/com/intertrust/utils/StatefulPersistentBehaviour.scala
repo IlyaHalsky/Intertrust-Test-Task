@@ -1,6 +1,5 @@
 package com.intertrust.utils
 
-import akka.NotUsed
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.persistence.typed.scaladsl.RetentionCriteria

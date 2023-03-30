@@ -38,9 +38,12 @@ case class ManagerState[ChildCommand](childrenMap: Map[String, ActorRef[ChildCom
       val child = context.spawn(createChild(childName), childName)
       copy(childrenMap = childrenMap.updated(childName, child))(createChild)
     }
-  def sendToChild(childName: String, message: ChildCommand, context: ActorContext[_]) =
+  def sendToChild(childName: String, message: ChildCommand, context: ActorContext[_]): Unit =
     childrenMap.get(childName) match {
       case Some(child) => child ! message
       case None => context.log.error(s"Child $childName doesn't exist to receive $message")
     }
+
+  def broadcastToChildren(message: ChildCommand): Unit =
+    childrenMap.values.foreach(_ ! message)
 }

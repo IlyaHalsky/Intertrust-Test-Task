@@ -65,6 +65,6 @@ trait Event extends Persistable {
   def timestamp: Instant
 }
 
-case class TurbineEvent(turbineId: String, status: TurbineStatus, generation: Double, timestamp: Instant) extends PersistableEvent with Event with WindFarmCommand
+case class TurbineEvent(turbineId: String, status: TurbineStatus, generation: Double, timestamp: Instant) extends PersistableEvent with Event with WindFarmCommand with TurbineCommand
 
-case class MovementEvent(engineerId: String, location: Location, movement: Movement, timestamp: Instant) extends PersonnelCommand with Event with WindFarmCommand
+case class MovementEvent(engineerId: String, location: Location, movement: Movement, timestamp: Instant) extends PersonnelCommand with Event

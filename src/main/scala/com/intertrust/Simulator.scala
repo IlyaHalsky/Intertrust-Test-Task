@@ -40,11 +40,11 @@ object Simulator {
       context.log.info("Starting simulation, estimated run time from {} to {}", Instant.now(), Instant.now().plusMillis((stopTimeInstant.toEpochMilli - startTimeInstant.toEpochMilli) / (tickForSeconds * 1000) * tickEveryMillisecond))
       val alerts = context.spawn(Alerts("alerts"), "alerts")
 
-      val personnel = context.spawn(Personnel("personnel", alerts), "personnel")
       val windFarm = context.spawn(WindFarm("wind-farm", alerts), "wind-farm")
+      val personnel = context.spawn(Personnel("personnel", alerts, windFarm), "personnel")
 
       val movementEvents = new MovementEventParser().parseEvents(Source.fromResource("movements.csv"))
-      val movementConsumer = context.spawn(PseudoKafkaConsumer("movement-consumer", movementEvents, personnel, windFarm), "movement-consumer")
+      val movementConsumer = context.spawn(PseudoKafkaConsumer("movement-consumer", movementEvents, personnel), "movement-consumer")
 
       val turbineEvents = new TurbineEventParser().parseEvents(Source.fromResource("turbines.csv"))
       val turbineConsumer = context.spawn(PseudoKafkaConsumer("turbine-consumer", turbineEvents, windFarm), "turbine-consumer")

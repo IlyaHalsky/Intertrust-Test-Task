@@ -20,8 +20,18 @@ case class PersonState(lastLocation: Option[Location]) extends PersistableState 
     (movement, lastLocation) match {
       case (Movement.Enter, Some(lastLocation)) if location != lastLocation =>
         Some(s"Entered new location ${location.id} without exiting ${lastLocation.id}")
+      case (Movement.Enter, Some(lastLocation)) if location == lastLocation =>
+        Some(s"Entered location ${location.id} again")
       case (Movement.Exit, None) =>
         Some(s"Exited ${location.id} without entering it")
+      case _ => None
+    }
+  }
+
+  def generateMovement(movementEvent: MovementEvent): Option[WorkerTurbineMove] = {
+    (movementEvent.movement, movementEvent.location, lastLocation) match {
+      case (Movement.Exit, _, Some(Turbine(id))) => Some(WorkerExit(id, movementEvent.timestamp))
+      case (Movement.Enter, t@Turbine(id), prevLocation) if !prevLocation.contains(t) => Some(WorkerEnter(id, movementEvent.timestamp))
       case _ => None
     }
   }
@@ -40,6 +50,9 @@ case class Person(
   private def reportError(movementTime: Instant, message: Option[String]): Unit =
     message.foreach(manager ! MovementAlert(movementTime, actorName, _))
 
+  private def reportTurbineMove(command: MovementEvent, prevState: PersonState): Unit =
+    prevState.generateMovement(command).foreach(manager ! _)
+
   private def commandToEvent(event: MovementEvent): PersonLocationChange =
     event.movement match {
       case Movement.Enter => PersonLocationChange(Some(event.location))
@@ -47,7 +60,9 @@ case class Person(
     }
 
   def commandHandler(state: PersonState, command: MovementEvent): Effect[PersonLocationChange, PersonState] =
-    Effect.persist(commandToEvent(command)).thenRun(_ => reportError(command.timestamp, state.checkLocationChange(command.location, command.movement)))
+    Effect.persist(commandToEvent(command))
+      .thenRun((_: PersonState) => reportTurbineMove(command, state))
+      .thenRun((_: PersonState) => reportError(command.timestamp, state.checkLocationChange(command.location, command.movement)))
 
   def eventHandler(state: PersonState, event: PersonLocationChange): PersonState =
     state.changeLocation(event.newLocation)

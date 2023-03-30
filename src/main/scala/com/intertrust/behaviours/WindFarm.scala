@@ -2,7 +2,7 @@ package com.intertrust.behaviours
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.{ActorRef, Behavior}
-import com.intertrust.protocol.{Alert, Event, WindFarmCommand}
+import com.intertrust.protocol.{Alert, TimeTick, TurbineAlert, TurbineCommand, TurbineEvent, WindFarmCommand, WorkerTurbineMove}
 import com.intertrust.utils.{CreateChild, ManagerBehaviour, ManagerState}
 
 object WindFarm {
@@ -11,8 +11,19 @@ object WindFarm {
 }
 
 case class WindFarm(actorName: String, alerts: ActorRef[Alert], context: ActorContext[WindFarmCommand])
-  extends ManagerBehaviour[WindFarmCommand, Event] {
-  def createChild(childName: String): Behavior[Event] = Turbine(childName, context.self)
-  def commandToCreateChild(command: WindFarmCommand): Option[CreateChild] = ???
-  def handleCommand(state: ManagerState[Event], command: WindFarmCommand): Unit = ???
+  extends ManagerBehaviour[WindFarmCommand, TurbineCommand] {
+  def createChild(childName: String): Behavior[TurbineCommand] = Turbine(childName, context.self)
+  def commandToCreateChild(command: WindFarmCommand): Option[CreateChild] =
+    command match {
+      case te: TurbineEvent => Some(CreateChild(te.turbineId))
+      case _ => None
+    }
+  def handleCommand(state: ManagerState[TurbineCommand], command: WindFarmCommand): Unit =
+    command match {
+      case te: TurbineEvent => state.sendToChild(te.turbineId, te, context)
+      case move: WorkerTurbineMove => state.sendToChild(move.turbineId, move, context)
+      case ta: TurbineAlert => alerts ! ta
+      case tt: TimeTick => state.broadcastToChildren(tt)
+      case _ => ()
+    }
 }

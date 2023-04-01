@@ -59,8 +59,8 @@ case class Turbine(
       case TurbineEvent(_, Working, _, _) if state.broken => Effect.persist(Fixed())
       case TurbineEvent(_, Broken, _, timestamp) if !state.broken => Effect.persist(Broke(timestamp))
         .thenRun((_: TurbineState) => manager ! TurbineAlert(timestamp, actorName, "Turbine broke"))
-      case _: WorkerEnter if state.broken => Effect.persist(WorkerEnter())
-      case exit: WorkerExit if state.broken => Effect.persist(WorkerExit(exit.timestamp, exit.workerId))
+      case _: WorkerEnterTurbine if state.broken => Effect.persist(WorkerEnter())
+      case exit: WorkerExitTurbine if state.broken => Effect.persist(WorkerExit(exit.timestamp, exit.personId))
       case TimeTick(time) => state.generateAlert(time) match {
         case Some(message) => Effect.persist(Reported())
           .thenRun((_: TurbineState) => manager ! TurbineAlert(time, actorName, message))

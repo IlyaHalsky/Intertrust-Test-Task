@@ -69,7 +69,7 @@ class PersonnelSpec
         val windFarm = TestProbe[WindFarmCommand]()
         val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
 
-        val message = WorkerEnter("test-turbine", Instant.ofEpochMilli(0))
+        val message = WorkerEnterTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
         personnel ! message
         persistenceTestKit.expectNothingPersisted("test-personnel")
         windFarm.expectMessage(message)
@@ -79,7 +79,7 @@ class PersonnelSpec
         val windFarm = TestProbe[WindFarmCommand]()
         val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
 
-        val message = WorkerExit("test-turbine", Instant.ofEpochMilli(0))
+        val message = WorkerExitTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
         personnel ! message
         persistenceTestKit.expectNothingPersisted("test-personnel")
         windFarm.expectMessage(message)

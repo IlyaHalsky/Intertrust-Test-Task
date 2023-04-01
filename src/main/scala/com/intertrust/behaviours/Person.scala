@@ -30,10 +30,10 @@ case class PersonState(lastLocation: Option[Location]) extends PersistableState 
     }
   }
 
-  def generateMovement(movementEvent: MovementEvent): Option[WorkerTurbineMove] = {
+  def generateMovement(workerId: String, movementEvent: MovementEvent): Option[WorkerTurbineMove] = {
     (movementEvent.movement, movementEvent.location, lastLocation) match {
-      case (Movement.Exit, Turbine(id), _) => Some(WorkerExit(id, movementEvent.timestamp))
-      case (Movement.Enter, t@Turbine(id), prevLocation) if !prevLocation.contains(t) => Some(WorkerEnter(id, movementEvent.timestamp))
+      case (Movement.Exit, Turbine(id), _) => Some(WorkerExitTurbine(workerId, id, movementEvent.timestamp))
+      case (Movement.Enter, t@Turbine(id), prevLocation) if !prevLocation.contains(t) => Some(WorkerEnterTurbine(workerId, id, movementEvent.timestamp))
       case _ => None
     }
   }
@@ -53,7 +53,7 @@ case class Person(
     message.foreach(manager ! MovementAlert(movementTime, actorName, _))
 
   private def reportTurbineMove(command: MovementEvent, prevState: PersonState): Unit =
-    prevState.generateMovement(command).foreach(manager ! _)
+    prevState.generateMovement(actorName, command).foreach(manager ! _)
 
   private def persistCommand(state: PersonState, event: MovementEvent): EffectBuilder[PersonLocationChange, PersonState] =
     event.movement match {

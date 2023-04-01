@@ -21,7 +21,6 @@ case class Personnel(actorName: String, alerts: ActorRef[Alert], windFarm: Actor
     case me: MovementEvent => state.sendToChild(me.engineerId, me, context)
     case ma: MovementAlert => alerts ! ma
     case move: WorkerTurbineMove => windFarm ! move
-    case _ => ()
   }
 }
 

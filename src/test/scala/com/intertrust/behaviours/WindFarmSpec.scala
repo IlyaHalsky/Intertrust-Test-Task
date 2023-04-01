@@ -41,7 +41,7 @@ class WindFarmSpec
         val alerts = TestProbe[Alert]()
         val windFarm = spawn(WindFarm("test-wind-farm", alerts.ref))
 
-        val message = WorkerEnter( "test-turbine", Instant.ofEpochMilli(0))
+        val message = WorkerEnterTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
         windFarm ! message
 
         val expectedPersistedEvent = CreateChild(message.turbineId)
@@ -64,12 +64,12 @@ class WindFarmSpec
         val alerts = TestProbe[Alert]()
         val windFarm = spawn(WindFarm("test-wind-farm", alerts.ref))
 
-        val message = WorkerEnter( "test-turbine", Instant.ofEpochMilli(0))
+        val message = WorkerEnterTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
         windFarm ! message
         val expectedPersistedEvent = CreateChild(message.turbineId)
         persistenceTestKit.expectNextPersisted("test-wind-farm", expectedPersistedEvent)
 
-        val message2 = WorkerEnter( "test-turbine", Instant.ofEpochMilli(1))
+        val message2 = WorkerEnterTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(1))
         windFarm ! message2
         persistenceTestKit.expectNothingPersisted("test-wind-farm")
       }

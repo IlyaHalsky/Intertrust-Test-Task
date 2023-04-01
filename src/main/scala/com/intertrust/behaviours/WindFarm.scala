@@ -25,6 +25,5 @@ case class WindFarm(actorName: String, alerts: ActorRef[Alert], context: ActorCo
       case move: WorkerTurbineMove => state.sendToChild(move.turbineId, move, context)
       case ta: TurbineAlert => alerts ! ta
       case tt: TimeTick => state.broadcastToChildren(tt)
-      case _ => ()
     }
 }

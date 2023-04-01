@@ -53,7 +53,7 @@ class PseudoKafkaSpec
     "not produce messages" when {
       "messages in the future" in {
         val queue = iterator(
-          100,500,600
+          100, 500, 600
         )
         val inbox = TestProbe[TestMessage]()
         val kafkaTestKit = spawn(PseudoKafkaConsumer("test-kafka", queue, inbox.ref))

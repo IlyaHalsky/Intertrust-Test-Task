@@ -191,7 +191,7 @@ class PersonSpec
 
         val message = MovementEvent("test-engineer", Turbine("123"), Enter, Instant.ofEpochMilli(0))
         person ! message
-        parent.expectMessage(WorkerEnter("123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(WorkerEnterTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
       }
       "on turbine exit" in {
         val parent = TestProbe[PersonnelCommand]()
@@ -199,11 +199,11 @@ class PersonSpec
 
         val message = MovementEvent("test-engineer", Turbine("123"), Enter, Instant.ofEpochMilli(0))
         person ! message
-        parent.expectMessage(WorkerEnter("123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(WorkerEnterTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
 
         val message2 = MovementEvent("test-engineer", Turbine("123"), Exit, Instant.ofEpochMilli(1))
         person ! message2
-        parent.expectMessage(WorkerExit("123", Instant.ofEpochMilli(1)))
+        parent.expectMessage(WorkerExitTurbine("test-engineer", "123", Instant.ofEpochMilli(1)))
       }
       "exit unvisited turbine" in {
         val parent = TestProbe[PersonnelCommand]()
@@ -211,7 +211,7 @@ class PersonSpec
 
         val message = MovementEvent("test-engineer", Turbine("123"), Exit, Instant.ofEpochMilli(0))
         person ! message
-        parent.expectMessage(WorkerExit("123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(WorkerExitTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
       }
     }
   }

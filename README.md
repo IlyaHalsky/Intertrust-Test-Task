@@ -1,5 +1,4 @@
-# Notes
-Please read notes provided in **[here](NOTES.md)**
+# Before running please read notes provided in **[here](NOTES.md)**
 
 # Intertrust Backend Engineer Test Task
 

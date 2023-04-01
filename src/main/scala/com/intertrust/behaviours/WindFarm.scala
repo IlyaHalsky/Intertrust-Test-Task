@@ -16,6 +16,7 @@ case class WindFarm(actorName: String, alerts: ActorRef[Alert], context: ActorCo
   def commandToCreateChild(command: WindFarmCommand): Option[CreateChild] =
     command match {
       case te: TurbineEvent => Some(CreateChild(te.turbineId))
+      case move: WorkerTurbineMove => Some(CreateChild(move.turbineId))
       case _ => None
     }
   def handleCommand(state: ManagerState[TurbineCommand], command: WindFarmCommand): Unit =

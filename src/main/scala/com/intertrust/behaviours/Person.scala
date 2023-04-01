@@ -2,7 +2,7 @@ package com.intertrust.behaviours
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.{ActorRef, Behavior}
-import akka.persistence.typed.scaladsl.Effect
+import akka.persistence.typed.scaladsl.{Effect, EffectBuilder}
 import com.intertrust.protocol._
 import com.intertrust.utils.StatefulPersistentBehaviour
 
@@ -22,15 +22,17 @@ case class PersonState(lastLocation: Option[Location]) extends PersistableState 
         Some(s"Entered new location ${location.id} without exiting ${lastLocation.id}")
       case (Movement.Enter, Some(lastLocation)) if location == lastLocation =>
         Some(s"Entered location ${location.id} again")
+      case (Movement.Exit, Some(lastLocation)) if location != lastLocation =>
+        Some(s"Exited ${location.id} without exiting ${lastLocation.id}")
       case (Movement.Exit, None) =>
-        Some(s"Exited ${location.id} without entering it")
+        Some(s"Exited ${location.id} without entering it first")
       case _ => None
     }
   }
 
   def generateMovement(movementEvent: MovementEvent): Option[WorkerTurbineMove] = {
     (movementEvent.movement, movementEvent.location, lastLocation) match {
-      case (Movement.Exit, _, Some(Turbine(id))) => Some(WorkerExit(id, movementEvent.timestamp))
+      case (Movement.Exit, Turbine(id), _) => Some(WorkerExit(id, movementEvent.timestamp))
       case (Movement.Enter, t@Turbine(id), prevLocation) if !prevLocation.contains(t) => Some(WorkerEnter(id, movementEvent.timestamp))
       case _ => None
     }
@@ -53,14 +55,15 @@ case class Person(
   private def reportTurbineMove(command: MovementEvent, prevState: PersonState): Unit =
     prevState.generateMovement(command).foreach(manager ! _)
 
-  private def commandToEvent(event: MovementEvent): PersonLocationChange =
+  private def persistCommand(state: PersonState, event: MovementEvent): EffectBuilder[PersonLocationChange, PersonState] =
     event.movement match {
-      case Movement.Enter => PersonLocationChange(Some(event.location))
-      case Movement.Exit => PersonLocationChange(None)
+      case Movement.Enter if !state.lastLocation.contains(event.location) => Effect.persist(PersonLocationChange(Some(event.location)))
+      case Movement.Exit if state.lastLocation.nonEmpty => Effect.persist(PersonLocationChange(None))
+      case _ => Effect.none
     }
 
   def commandHandler(state: PersonState, command: MovementEvent): Effect[PersonLocationChange, PersonState] =
-    Effect.persist(commandToEvent(command))
+    persistCommand(state, command)
       .thenRun((_: PersonState) => reportTurbineMove(command, state))
       .thenRun((_: PersonState) => reportError(command.timestamp, state.checkLocationChange(command.location, command.movement)))
 

@@ -22,8 +22,8 @@ trait ManagerBehaviour[Command, ChildCommand]
   final def startingState: ManagerState[ChildCommand] = ManagerState[ChildCommand](Map.empty)(createChild)
   def commandHandler(state: ManagerState[ChildCommand], command: Command): Effect[CreateChild, ManagerState[ChildCommand]] =
     (commandToCreateChild(command) match {
-      case Some(createChild) => Effect.persist[CreateChild, ManagerState[ChildCommand]](createChild)
-      case None => Effect.none[CreateChild, ManagerState[ChildCommand]]
+      case Some(createChild) if !state.childrenMap.contains(createChild.childName) => Effect.persist[CreateChild, ManagerState[ChildCommand]](createChild)
+      case _ => Effect.none[CreateChild, ManagerState[ChildCommand]]
     }).thenRun(state => handleCommand(state, command))
   final def eventHandler(state: ManagerState[ChildCommand], event: CreateChild): ManagerState[ChildCommand] =
     state.spawnChild(event.childName, context)

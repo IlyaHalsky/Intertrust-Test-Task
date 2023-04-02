@@ -1,11 +1,11 @@
 package com.intertrust.parsers
 
-import java.time.Instant
 import com.intertrust.protocol.Movement.{Enter, Exit}
 import com.intertrust.protocol._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.time.Instant
 import scala.io.Source
 
 class MovementEventParserSpec extends AnyWordSpec with Matchers {

@@ -27,7 +27,8 @@ and `Desirializer`.
 Otherwise `jackson` creates new instance of `case object` and it doesn't match against instances from code.
 
 I've changed quite a bit `protocol.Events` for serialization purposes, hopefully it's not against rules.
-On the same subject: created multiple traits just for actors, since Scala 2 doesn't support union types.
+On the same subject: created multiple traits just for actors like `PersonnelCommand` and `WindFarmCommand`, since Scala
+2 doesn't support union types. 
 
 ## Worker inconsistencies
 

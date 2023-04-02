@@ -3,20 +3,20 @@ package com.intertrust.behaviours
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.persistence.testkit.PersistenceTestKitPlugin
 import akka.persistence.testkit.scaladsl.PersistenceTestKit
-import com.intertrust.protocol.Movement.{Enter, Exit}
+import com.intertrust.protocol.Movement.Exit
 import com.intertrust.protocol._
+import com.intertrust.test_utils.TestUtils
 import com.intertrust.utils.CreateChild
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import java.time.Instant
 import scala.language.implicitConversions
 
 class PersonnelSpec
   extends ScalaTestWithActorTestKit(PersistenceTestKitPlugin.config.withFallback(ConfigFactory.defaultApplication()))
-    with AnyWordSpecLike with Matchers with BeforeAndAfterEach {
+    with AnyWordSpecLike with Matchers with BeforeAndAfterEach with TestUtils {
 
   val persistenceTestKit: PersistenceTestKit = PersistenceTestKit(system)
 
@@ -30,58 +30,58 @@ class PersonnelSpec
       "on first message MovementEvent" in {
         val alerts = TestProbe[Alert]()
         val windFarm = TestProbe[WindFarmCommand]()
-        val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
+        val personnel = spawn(Personnel(personnelId, alerts.ref, windFarm.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         personnel ! message
 
         val expectedPersistedEvent = CreateChild(message.engineerId)
-        persistenceTestKit.expectNextPersisted("test-personnel", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(personnelId, expectedPersistedEvent)
       }
       "not on the second" in {
         val alerts = TestProbe[Alert]()
         val windFarm = TestProbe[WindFarmCommand]()
-        val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
+        val personnel = spawn(Personnel(personnelId, alerts.ref, windFarm.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         personnel ! message
         val expectedPersistedEvent = CreateChild(message.engineerId)
-        persistenceTestKit.expectNextPersisted("test-personnel", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(personnelId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit)
         personnel ! message2
-        persistenceTestKit.expectNothingPersisted("test-personnel")
+        persistenceTestKit.expectNothingPersisted(personnelId)
       }
     }
     "forward events" when {
       "MovementAlert" in {
         val alerts = TestProbe[Alert]()
         val windFarm = TestProbe[WindFarmCommand]()
-        val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
+        val personnel = spawn(Personnel(personnelId, alerts.ref, windFarm.ref))
 
-        val message = MovementAlert(Instant.ofEpochMilli(0), "test-engineer", "test error")
+        val message = movementAlert(0, "test error")
         personnel ! message
-        persistenceTestKit.expectNothingPersisted("test-personnel")
+        persistenceTestKit.expectNothingPersisted(personnelId)
         alerts.expectMessage(message)
       }
       "WorkerTurbineMove:WorkerEnter" in {
         val alerts = TestProbe[Alert]()
         val windFarm = TestProbe[WindFarmCommand]()
-        val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
+        val personnel = spawn(Personnel(personnelId, alerts.ref, windFarm.ref))
 
-        val message = WorkerEnterTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
+        val message = workerMoveTurbine()
         personnel ! message
-        persistenceTestKit.expectNothingPersisted("test-personnel")
+        persistenceTestKit.expectNothingPersisted(personnelId)
         windFarm.expectMessage(message)
       }
       "WorkerTurbineMove:WorkerExit" in {
         val alerts = TestProbe[Alert]()
         val windFarm = TestProbe[WindFarmCommand]()
-        val personnel = spawn(Personnel("test-personnel", alerts.ref, windFarm.ref))
+        val personnel = spawn(Personnel(personnelId, alerts.ref, windFarm.ref))
 
-        val message = WorkerExitTurbine("test-engineer", "test-turbine", Instant.ofEpochMilli(0))
+        val message = workerMoveTurbine(enter = Exit)
         personnel ! message
-        persistenceTestKit.expectNothingPersisted("test-personnel")
+        persistenceTestKit.expectNothingPersisted(personnelId)
         windFarm.expectMessage(message)
       }
     }

@@ -15,26 +15,26 @@ object Turbine {
     StatefulPersistentBehaviour(Turbine(actorName, manager, _))
 }
 
-trait TurbineStatusChange extends PersistableEvent
+sealed trait TurbineStatusChange extends PersistableEvent
 
-case class Broke(timestamp: Instant) extends TurbineStatusChange
+case class BrokeEvent(timestamp: Instant) extends TurbineStatusChange
 
-case class Fixed() extends TurbineStatusChange // case class in order to avoid serialization issues
+case class RepairedEvent() extends TurbineStatusChange // case class in order to avoid serialization issues
 
-case class WorkerEnter() extends TurbineStatusChange
+case class WorkerEnterEvent() extends TurbineStatusChange
 
-case class WorkerExit(timestamp: Instant, workerId: String) extends TurbineStatusChange
+case class WorkerExitEvent(timestamp: Instant, workerId: String) extends TurbineStatusChange
 
-case class Reported() extends TurbineStatusChange
+case class AlertReportedEvent() extends TurbineStatusChange
 
 case class TurbineState(broken: Boolean, hadWorker: Option[String], reportAt: Option[Instant]) extends PersistableState {
   def changeState(event: TurbineStatusChange): TurbineState =
     event match {
-      case Broke(timestamp) => copy(broken = true, reportAt = Some(timestamp.plus(4, ChronoUnit.HOURS)))
-      case _: Fixed => copy(broken = false, hadWorker = None, reportAt = None)
-      case _: WorkerEnter => copy(reportAt = None)
-      case WorkerExit(timestamp, workerId) if broken => copy(hadWorker = Some(workerId), reportAt = Some(timestamp.plus(3, ChronoUnit.MINUTES)))
-      case _: Reported => copy(reportAt = None)
+      case BrokeEvent(timestamp) => copy(broken = true, reportAt = Some(timestamp.plus(4, ChronoUnit.HOURS)))
+      case _: RepairedEvent => copy(broken = false, hadWorker = None, reportAt = None)
+      case _: WorkerEnterEvent => copy(reportAt = None)
+      case WorkerExitEvent(timestamp, workerId) if broken => copy(hadWorker = Some(workerId), reportAt = Some(timestamp.plus(3, ChronoUnit.MINUTES)))
+      case _: AlertReportedEvent => copy(reportAt = None)
       case _ => this
     }
 
@@ -56,13 +56,13 @@ case class Turbine(
   def startingState: TurbineState = TurbineState(broken = false, hadWorker = None, None)
   def commandHandler(state: TurbineState, command: TurbineCommand): Effect[TurbineStatusChange, TurbineState] =
     command match {
-      case TurbineEvent(_, Working, _, _) if state.broken => Effect.persist(Fixed())
-      case TurbineEvent(_, Broken, _, timestamp) if !state.broken => Effect.persist(Broke(timestamp))
+      case TurbineEvent(_, Working, _, _) if state.broken => Effect.persist(RepairedEvent())
+      case TurbineEvent(_, Broken, _, timestamp) if !state.broken => Effect.persist(BrokeEvent(timestamp))
         .thenRun((_: TurbineState) => manager ! TurbineAlert(timestamp, actorName, "Turbine broke"))
-      case _: WorkerEnterTurbine if state.broken => Effect.persist(WorkerEnter())
-      case exit: WorkerExitTurbine if state.broken => Effect.persist(WorkerExit(exit.timestamp, exit.personId))
+      case _: WorkerEnterTurbine if state.broken => Effect.persist(WorkerEnterEvent())
+      case exit: WorkerExitTurbine if state.broken => Effect.persist(WorkerExitEvent(exit.timestamp, exit.personId))
       case TimeTick(time) => state.generateAlert(time) match {
-        case Some(message) => Effect.persist(Reported())
+        case Some(message) => Effect.persist(AlertReportedEvent())
           .thenRun((_: TurbineState) => manager ! TurbineAlert(time, actorName, message))
         case None => Effect.none
       }

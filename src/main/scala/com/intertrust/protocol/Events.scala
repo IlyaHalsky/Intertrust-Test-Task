@@ -59,7 +59,6 @@ object Movement extends Enum[Movement] {
 @JsonSubTypes(Array(
   new Type(value = classOf[TurbineEvent]),
   new Type(value = classOf[MovementEvent]),
-  new Type(value = classOf[TestMessage]),
 )
 )
 trait Event extends Persistable {

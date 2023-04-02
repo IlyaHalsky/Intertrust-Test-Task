@@ -1,23 +1,21 @@
 package com.intertrust.behaviours
 
-import akka.actor.testkit.typed.FishingOutcome.{Complete, Continue}
-import akka.actor.testkit.typed.scaladsl.ManualTime
-
-import scala.concurrent.duration._
-import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
+import akka.actor.testkit.typed.scaladsl.{ManualTime, ScalaTestWithActorTestKit, TestProbe}
 import com.intertrust.protocol.TimeEndTypes.TimeEnd
 import com.intertrust.protocol.{TimeEnd, TimeTick}
+import com.intertrust.test_utils._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import java.time.Instant
+import java.time.temporal.ChronoUnit
+import scala.concurrent.duration._
 
-class ClockSpec extends ScalaTestWithActorTestKit(ManualTime.config) with AnyWordSpecLike with Matchers {
+class ClockSpec extends ScalaTestWithActorTestKit(ManualTime.config) with AnyWordSpecLike with Matchers with TestUtils {
   val manualTime: ManualTime = ManualTime()
   "Clock behaviour" should {
-    "produce TimeTick commands for period 2022-01-20T00:00:00.00Z to 2022-01-21T00:00:00.00Z" when {
-      val startTime = Instant.parse("2022-01-20T00:00:00.00Z")
-      val endTime = Instant.parse("2022-01-21T00:00:00.00Z")
+    "produce TimeTick commands for period of 24 hours" when {
+      val startTime = testStart.truncatedTo(ChronoUnit.DAYS)
+      val endTime = startTime + 24.hours
       "tick rate 10, interval 1 hour will produce 25 ticks" in {
         val hourMillis = 1.hour.toMillis
         val tickProbe = TestProbe[TimeTick]()

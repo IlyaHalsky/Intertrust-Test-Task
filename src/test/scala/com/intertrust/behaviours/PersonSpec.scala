@@ -3,21 +3,19 @@ package com.intertrust.behaviours
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.persistence.testkit.PersistenceTestKitPlugin
 import akka.persistence.testkit.scaladsl.PersistenceTestKit
-import com.intertrust.protocol.Movement.{Enter, Exit}
+import com.intertrust.protocol.Movement.Exit
 import com.intertrust.protocol._
-import com.intertrust.utils.CreateChild
+import com.intertrust.test_utils.TestUtils
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import scala.concurrent.duration._
 
-import java.time.Instant
 import scala.language.implicitConversions
 
 class PersonSpec
   extends ScalaTestWithActorTestKit(PersistenceTestKitPlugin.config.withFallback(ConfigFactory.defaultApplication()))
-    with AnyWordSpecLike with Matchers with BeforeAndAfterEach {
+    with AnyWordSpecLike with Matchers with BeforeAndAfterEach with TestUtils {
 
   val persistenceTestKit: PersistenceTestKit = PersistenceTestKit(system)
 
@@ -30,110 +28,110 @@ class PersonSpec
     "persist" when {
       "on first enter" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
 
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
       }
       "not on second enter" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1)
         person ! message2
-        persistenceTestKit.expectNothingPersisted("test-engineer")
+        persistenceTestKit.expectNothingPersisted(engineerId)
       }
       "persist on enter - exit" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit)
         person ! message2
         val expectedPersistedEvent2 = PersonLocationChange(None)
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent2)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent2)
       }
       "not on second exit" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit)
         person ! message2
         val expectedPersistedEvent2 = PersonLocationChange(None)
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent2)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent2)
 
-        val message3 = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(2))
-        person ! message2
-        persistenceTestKit.expectNothingPersisted("test-engineer")
+        val message3 = moveVessel(2, Exit)
+        person ! message3
+        persistenceTestKit.expectNothingPersisted(engineerId)
       }
       "persist on enter - invalid exit" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("1234"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit, invalidVesselId)
         person ! message2
         val expectedPersistedEvent2 = PersonLocationChange(None)
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent2)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent2)
       }
       "persist on enter - invalid enter" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         val expectedPersistedEvent = PersonLocationChange(Some(message.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent)
 
-        val message2 = MovementEvent("test-engineer", Vessel("1234"), Enter, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, vesselId = invalidVesselId)
         person ! message2
         val expectedPersistedEvent2 = PersonLocationChange(Some(message2.location))
-        persistenceTestKit.expectNextPersisted("test-engineer", expectedPersistedEvent2)
+        persistenceTestKit.expectNextPersisted(engineerId, expectedPersistedEvent2)
       }
     }
     "not send alert" when {
       "enter - exit vessel" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         parent.expectNoMessage()
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit)
         person ! message2
         parent.expectNoMessage()
       }
       "enter - exit turbine" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Turbine("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveTurbine()
         person ! message
         parent.expectMessageType[WorkerTurbineMove]
 
-        val message2 = MovementEvent("test-engineer", Turbine("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveTurbine(1, Exit)
         person ! message2
         parent.expectMessageType[WorkerTurbineMove]
       }
@@ -141,77 +139,77 @@ class PersonSpec
     "send alert" when {
       "enter with no exit" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         parent.expectNoMessage()
 
-        val message2 = MovementEvent("test-engineer", Vessel("1234"), Enter, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, vesselId = invalidVesselId)
         person ! message2
-        parent.expectMessage(MovementAlert(Instant.ofEpochMilli(1), "test-engineer", s"Entered new location 1234 without exiting 123"))
+        parent.expectMessage(movementAlert(1, s"Entered new location $invalidVesselId without exiting $vesselId"))
       }
       "enter same location again" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         parent.expectNoMessage()
 
-        val message2 = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1)
         person ! message2
-        parent.expectMessage(MovementAlert(Instant.ofEpochMilli(1), "test-engineer", "Entered location 123 again"))
+        parent.expectMessage(movementAlert(1, s"Entered location $vesselId again"))
       }
       "exit location != previous location" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveVessel()
         person ! message
         parent.expectNoMessage()
 
-        val message2 = MovementEvent("test-engineer", Vessel("1234"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveVessel(1, Exit, invalidVesselId)
         person ! message2
-        parent.expectMessage(MovementAlert(Instant.ofEpochMilli(1), "test-engineer", "Exited 1234 without exiting 123"))
+        parent.expectMessage(movementAlert(1, s"Exited $invalidVesselId without exiting $vesselId"))
       }
       "exit location with no previous location" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Vessel("123"), Exit, Instant.ofEpochMilli(0))
+        val message = moveVessel(enter = Exit)
         person ! message
-        parent.expectMessage(MovementAlert(Instant.ofEpochMilli(0), "test-engineer", "Exited 123 without entering it first"))
+        parent.expectMessage(movementAlert(0, s"Exited $vesselId without entering it first"))
       }
     }
     "send worker movement" when {
       "on turbine enter" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Turbine("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveTurbine()
         person ! message
-        parent.expectMessage(WorkerEnterTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(workerMoveTurbine())
       }
       "on turbine exit" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Turbine("123"), Enter, Instant.ofEpochMilli(0))
+        val message = moveTurbine()
         person ! message
-        parent.expectMessage(WorkerEnterTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(workerMoveTurbine())
 
-        val message2 = MovementEvent("test-engineer", Turbine("123"), Exit, Instant.ofEpochMilli(1))
+        val message2 = moveTurbine(1, Exit)
         person ! message2
-        parent.expectMessage(WorkerExitTurbine("test-engineer", "123", Instant.ofEpochMilli(1)))
+        parent.expectMessage(workerMoveTurbine(1, Exit))
       }
       "exit unvisited turbine" in {
         val parent = TestProbe[PersonnelCommand]()
-        val person = spawn(Person("test-engineer", parent.ref))
+        val person = spawn(Person(engineerId, parent.ref))
 
-        val message = MovementEvent("test-engineer", Turbine("123"), Exit, Instant.ofEpochMilli(0))
+        val message = moveTurbine(enter = Exit)
         person ! message
-        parent.expectMessage(WorkerExitTurbine("test-engineer", "123", Instant.ofEpochMilli(0)))
+        parent.expectMessage(workerMoveTurbine(enter = Exit))
       }
     }
   }

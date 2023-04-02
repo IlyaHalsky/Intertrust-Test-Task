@@ -2,7 +2,8 @@ package com.intertrust.behaviours
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.{ActorRef, Behavior}
-import com.intertrust.protocol.{Alert, TimeTick, TurbineAlert, TurbineCommand, TurbineEvent, WindFarmCommand, WorkerTurbineMove}
+import com.intertrust.behaviours.Turbine
+import com.intertrust.protocol._
 import com.intertrust.utils.{CreateChild, ManagerBehaviour, ManagerState}
 
 object WindFarm {
